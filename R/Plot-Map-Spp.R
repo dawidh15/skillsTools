@@ -7,9 +7,6 @@
 #' @export
 MapCatchesBySpp <- function(catchData)
 {
-  skillsEnv$mapLayout
-
-
   spPoints <- SpatialPoints(
     coords = select(catchData, Lon, Lat) # A data frame of coordinates
     , proj4string = skillsEnv$dd_crs # Projection
@@ -17,9 +14,19 @@ MapCatchesBySpp <- function(catchData)
   )
 
   # Creates a raster
-  spPixDataFrame <- SpatialPixelsDataFrame(points = spPoints,
-                                           data = catchData,
-                                           proj4string = skillsEnv$dd_crs)
+  spPixDataFrame <-
+    SpatialPixelsDataFrame(points = spPoints, data = catchData, proj4string = skillsEnv$dd_crs)
 
-  return(spPixDataFrame)
+  spplot(
+    spPixDataFrame
+    , zcol = "Weight",
+    colorkey = list(
+      col= function(x)rev(gray.colors(x))
+    ),
+    cuts=10,
+    col.regions= function(x)rev(gray.colors(x)),
+    sp.layout= skillsTools:::skillsEnv$mapLayout,
+    scales = list(draw = TRUE),
+    pretty=TRUE
+  )
 }
