@@ -3,6 +3,7 @@
 export(CheckDBExists)
 export(CheckTblLLTunaBillfish)
 export(CreateDB)
+export(GetSppNames)
 export(GetTable)
 export(MapCatchesBySpp)
 export(UpdateAuxiliaryTables)
