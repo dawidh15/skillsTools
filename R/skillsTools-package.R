@@ -9,4 +9,6 @@
 #' @import tidyverse
 #' @import RSQLite
 #' @import methods
+#' @importFrom glue glue_sql
+#' @import sp
 NULL
