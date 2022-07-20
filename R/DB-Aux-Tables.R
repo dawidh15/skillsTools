@@ -5,7 +5,7 @@
 #' @param shinyDir The path of the shiny app directory.
 #'
 #' @export
-UpdateAuxiliaryTables <- function(shinyDir)
+UpdateAuxiliaryTables <- function(shinyDir = ".")
 {
   # Catches over time and flag
   aux_summOverTimeFlag(shinyDir = shinyDir)
@@ -13,6 +13,8 @@ UpdateAuxiliaryTables <- function(shinyDir)
   # Build spp name table
   aux_spp_list(shinyDir = shinyDir)
 
+  # Build scaled catches by flag and time period
+  aux_scaled_catches_period(shinyDir = shinyDir)
 
   # Optimize DB
   optimizeDB(shinyDir = shinyDir)
@@ -96,3 +98,56 @@ aux_spp_list <- function(shinyDir)
     }, finally = DBI::dbDisconnect(con)
   )
   }
+
+
+
+aux_scaled_catches_period <- function(shinyDir)
+{
+  all_path <- fs::path_join(c(shinyDir, skillsEnv$dbname))
+
+
+  # Creates an intermediate table
+  # that will be removed when the connection ends
+  sql_intermediate_tbl <-
+    "CREATE TEMPORARY TABLE IF NOT EXISTS tmp_period_table AS
+  WITH tbl_period AS(
+  SELECT *, ntile(5) OVER(ORDER BY Year) AS `Period` --binned time
+  FROM LLTunaBillfish
+  )
+  SELECT
+  	Period, Flag, Species,
+  	min(Year) AS MinYear,
+  	max(Year) AS MaxYear,
+  	SUM(`Weight (mt)`) AS Weight,
+  	dense_rank() OVER(
+  		PARTITION BY Period
+  		ORDER BY SUM(`Weight (mt)`) DESC
+  		) AS Ranking
+  FROM tbl_period
+  GROUP BY Period, Flag, Species;"
+
+  # This step joins the table of catches by period/spp/flag
+  # With a similar table that only contains the maximum values per period
+  # There's a left join, like dplyr::left_join(...)
+  sql_proportional_catches <-
+    "CREATE TABLE aux_prop_catch_period AS
+    SELECT t1.Period, t1.Flag, t1.Species, t1.MinYear, t1.MaxYear,
+  	t1.Weight ,	100 * (t1.Weight/t2.Weight) AS PropMaxCatch,
+  	t1.Ranking
+  FROM tmp_period_table AS t1
+  	LEFT JOIN (
+  		SELECT * FROM tmp_period_table WHERE Ranking = 1
+  		) AS t2
+  	ON t1.Period = t2.Period;"
+
+  con <- DBI::dbConnect(RSQLite::SQLite(), all_path)
+  tryCatch({
+    # Create intermediate table if not exists
+    if (!dbExistsTable(con, "aux_prop_catch_period"))
+    {
+      dbExecute(con, sql_intermediate_tbl)
+      dbExecute(con, sql_proportional_catches)
+    }
+  },
+  finally = dbDisconnect(con))
+}

@@ -4,7 +4,7 @@
 \alias{GetTable}
 \title{Get a table from the database}
 \usage{
-GetTable(shinyDir, table_name)
+GetTable(shinyDir = ".", table_name)
 }
 \arguments{
 \item{shinyDir}{The directory of the shiny app.}
@@ -15,9 +15,11 @@ GetTable(shinyDir, table_name)
 Name the table you want, and get it.
 }
 \details{
-\code{table_name} should have the following values:
+\code{table_name} should have the following character values; otherwise returns an empty data frame:
 
 \describe{
-\item{general_spatial_data:}{Retrieves a table of catches by lon, lat and species. The database name for this table is \code{aux_summ_time_flag} (because data is summarized over time and flag.)}
+\item{General Spatial Data:}{Retrieves a table of catches by lon, lat and species. The database name for this table is \code{aux_summ_time_flag} (because data is summarized over time and flag.)}
+\item{Catch Time Series:}{Retrieves a table with year, species and total weight, to plot a time series of catches.}
+\item{Proportional Catches by Period-Flag:}{Contains catches scaled by the maximum catch within a time period. Also, contains the min and max years that composed a period for each flag.}
 }
 }

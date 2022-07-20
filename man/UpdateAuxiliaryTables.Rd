@@ -4,7 +4,7 @@
 \alias{UpdateAuxiliaryTables}
 \title{Creates all auxiliary tables}
 \usage{
-UpdateAuxiliaryTables(shinyDir)
+UpdateAuxiliaryTables(shinyDir = ".")
 }
 \arguments{
 \item{shinyDir}{The path of the shiny app directory.}

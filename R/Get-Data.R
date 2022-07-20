@@ -7,19 +7,76 @@
 #'
 #' @details
 #'
-#' \code{table_name} should have the following values:
+#' \code{table_name} should have the following character values; otherwise returns an empty data frame:
 #'
 #' \describe{
-#'   \item{general_spatial_data:}{Retrieves a table of catches by lon, lat and species. The database name for this table is \code{aux_summ_time_flag} (because data is summarized over time and flag.)}
+#'   \item{General Spatial Data:}{Retrieves a table of catches by lon, lat and species. The database name for this table is \code{aux_summ_time_flag} (because data is summarized over time and flag.)}
+#'   \item{Catch Time Series:}{Retrieves a table with year, species and total weight, to plot a time series of catches.}
+#'   \item{Proportional Catches by Period-Flag:}{Contains catches scaled by the maximum catch within a time period. Also, contains the min and max years that composed a period for each flag.}
 #' }
 #'
 #' @export
-GetTable <- function(shinyDir, table_name)
+GetTable <- function(shinyDir = ".", table_name)
 {
-  .NotYetImplemented()
+
+  retrieved_data <-
+    switch (table_name,
+      "General Spatial Data" = get_general_spatial_data(shinyDir),
+      "Catch Time Series" = get_ts_by_spp(shinyDir),
+      "Proportional Catches by Period-Flag" = get_scaled_catches_period(shinyDir),
+      data.frame() #default
+    )
+  return(retrieved_data)
 }
 
 
+# Internal query executers
+
+## For map of historical catches
+get_general_spatial_data <- function(shinyDir)
+{
+  all_path <- fs::path_join(c(shinyDir, skillsEnv$dbname))
+  con <- dbConnect(RSQLite::SQLite(), all_path)
+  tryCatch({
+    val <- dbReadTable(con, "aux_summ_time_flag")
+  }, finally = dbDisconnect(con)
+  )
+  return(val)
+}
+
+
+## Data for catch time series by spp
+
+get_ts_by_spp <- function(shinyDir)
+{
+  all_path <- fs::path_join(c(shinyDir, skillsEnv$dbname))
+  qry_time <-
+    "SELECT Year, Species, SUM(`Weight (mt)`) AS Weight
+      FROM LLTunaBillfish
+      GROUP BY Year,  Species
+      UNION
+      SELECT Year, 'ALL' AS Species, SUM(`Weight (mt)`) AS Weight
+      FROM LLTunaBillfish
+      GROUP BY Year;"
+  con <- dbConnect(RSQLite::SQLite(), all_path)
+  tryCatch({
+    val <- dbGetQuery(con, qry_time)
+  }, finally = dbDisconnect(con)
+  )
+  return(val)
+}
+
+# Data of scaled catches by time period-flag-spp
+get_scaled_catches_period <- function(shinyDir)
+{
+  all_path <- fs::path_join(c(shinyDir, skillsEnv$dbname))
+  con <- dbConnect(RSQLite::SQLite(), all_path)
+  tryCatch({
+    val <- dbReadTable(con, "aux_prop_catch_period")
+  }, finally = dbDisconnect(con)
+  )
+  return(val)
+}
 
 #' Get spp names
 #'
