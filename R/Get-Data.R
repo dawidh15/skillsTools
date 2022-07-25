@@ -103,3 +103,56 @@ GetSppNames <- function(shinyDir)
   }, finally = DBI::dbDisconnect(con))
   return(val)
 }
+
+
+#' Get Flag names
+#'
+#' Get a character vector with the abbreviations for the flags of the operating vessels.
+#'
+#' Use this function to generate a list of valid choices of flags that are contained in the database.
+#'
+#' @param shinyDir The directory of the shiny app.
+#'
+#'
+#' @export
+GetFlagNames <- function(shinyDir = ".")
+{
+  all_path <- fs::path_join(c(shinyDir, skillsEnv$dbname))
+
+  con <- DBI::dbConnect(RSQLite::SQLite(), all_path)
+  val <- "Find technical support."
+  tryCatch({
+    if (DBI::dbExistsTable(con, "aux_flag_list"))
+    {
+      val <- DBI::dbGetQuery(con,
+                             "SELECT Flag FROM aux_flag_list ORDER BY `Importance`")
+    }
+  }, finally = DBI::dbDisconnect(con))
+  return(val)
+}
+
+
+#' Get a valid time period
+#'
+#' Get a integer vector of time periods that are contained in the database.
+#'
+#' @param shinyDir The directory of the shiny app.
+#'
+#'
+#' @export
+GetTimePeriod <- function(shinyDir = ".")
+{
+  all_path <- fs::path_join(c(shinyDir, skillsEnv$dbname))
+
+  con <- DBI::dbConnect(RSQLite::SQLite(), all_path)
+  val <- "Find technical support."
+  tryCatch({
+    if (DBI::dbExistsTable(con, "aux_flag_list"))
+    {
+      val <- DBI::dbGetQuery(con,
+                             "SELECT DISTINCT Period FROM aux_prop_catch_period;")
+      val <- as.integer(pull(val,Period))
+    }
+  }, finally = DBI::dbDisconnect(con))
+  return(val)
+}

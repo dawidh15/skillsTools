@@ -16,6 +16,9 @@ UpdateAuxiliaryTables <- function(shinyDir = ".")
   # Build scaled catches by flag and time period
   aux_scaled_catches_period(shinyDir = shinyDir)
 
+  # Build flag table
+  aux_flag_list(shinyDir = shinyDir)
+
   # Optimize DB
   optimizeDB(shinyDir = shinyDir)
 }
@@ -100,7 +103,33 @@ aux_spp_list <- function(shinyDir)
   }
 
 
+# Build flag list
+aux_flag_list <- function(shinyDir)
+{
+  all_path <- fs::path_join(c(shinyDir, skillsEnv$dbname))
+  sql_qry <-
+    "CREATE TABLE aux_flag_list AS
+  WITH flag_cumm AS(
+    	SELECT Flag, SUM(Weight) AS `Weight`
+    	FROM aux_prop_catch_period
+    	GROUP BY Flag
+    )
+    SELECT flag_cumm.Flag,
+    	dense_rank() OVER(ORDER BY flag_cumm.Weight DESC) AS `Importance`
+    	FROM flag_cumm;"
 
+  con <- DBI::dbConnect(RSQLite::SQLite(), all_path)
+  tryCatch(
+    {
+      if (DBI::dbExistsTable(con, "aux_flag_list")) DBI::dbRemoveTable(con, "aux_flag_list")
+      DBI::dbExecute(con, sql_qry)
+    }, finally = DBI::dbDisconnect(con)
+  )
+}
+
+
+
+# Data for Flag Page
 aux_scaled_catches_period <- function(shinyDir)
 {
   all_path <- fs::path_join(c(shinyDir, skillsEnv$dbname))
