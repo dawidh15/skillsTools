@@ -11,4 +11,5 @@
 #' @import methods
 #' @importFrom glue glue_sql
 #' @import sp
+#' @importFrom rgdal readOGR
 NULL
