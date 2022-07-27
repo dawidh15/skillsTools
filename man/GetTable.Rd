@@ -19,7 +19,9 @@ Name the table you want, and get it.
 
 \describe{
 \item{General Spatial Data:}{Retrieves a table of catches by lon, lat and species. The database name for this table is \code{aux_summ_time_flag} (because data is summarized over time and flag.)}
-\item{Catch Time Series:}{Retrieves a table with year, species and total weight, to plot a time series of catches.}
+\item{Catch Time Series By Species:}{Retrieves a table with year, species and total weight.}
 \item{Proportional Catches by Period-Flag:}{Contains catches scaled by the maximum catch within a time period. Also, contains the min and max years that composed a period for each flag.}
+\item{Catch Time Series By Flag}{Retrieves a table with year, flag and total weight}
+\item{Catch By Space-Period-Flag}{Retrieves a table with coordinates, period, flag, and total weight.}
 }
 }

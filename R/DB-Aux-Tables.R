@@ -19,6 +19,9 @@ UpdateAuxiliaryTables <- function(shinyDir = ".")
   # Build flag table
   aux_flag_list(shinyDir = shinyDir)
 
+  # Build sp flag period table
+  aux_sp_flag_period(shinyDir = shinyDir)
+
   # Optimize DB
   optimizeDB(shinyDir = shinyDir)
 }
@@ -130,7 +133,7 @@ aux_flag_list <- function(shinyDir)
 
 
 # Data for Flag Page
-aux_scaled_catches_period <- function(shinyDir)
+aux_scaled_catches_period <- function(shinyDir = ".")
 {
   all_path <- fs::path_join(c(shinyDir, skillsEnv$dbname))
 
@@ -179,4 +182,42 @@ aux_scaled_catches_period <- function(shinyDir)
     }
   },
   finally = dbDisconnect(con))
+}
+
+
+# Data for Flag-Period Map
+aux_sp_flag_period <- function(shinyDir = ".")
+{
+  all_path <- fs::path_join(c(shinyDir, skillsEnv$dbname))
+
+
+  # Creates an intermediate table
+  # that will be removed when the connection ends
+  sql_tbl <-
+    "CREATE TABLE IF NOT EXISTS aux_sp_flag_period AS
+  WITH cte_period AS (
+	SELECT *,
+	ntile(5) OVER( ORDER BY Year ) AS Period
+	FROM LLTunaBillfish
+)
+	SELECT
+	    Lat, Lon, Flag, Period
+	    , MIN(Year) AS MinYear, MAX(Year) AS MaxYear
+	    , SUM(`Count`) AS `Count`, SUM(`Weight (mt)`) AS `Weight`
+    FROM cte_period
+    GROUP BY Lat, Lon, Flag, Period;"
+
+  # INDEX
+  idx <- "CREATE INDEX idx_aux_sp_flag_period ON aux_sp_flag_period(Flag, Period);"
+  con <- DBI::dbConnect(RSQLite::SQLite(), all_path)
+
+  tryCatch(
+    {
+      if (DBI::dbExistsTable(con, "aux_sp_flag_period"))
+        DBI::dbRemoveTable(con, "aux_sp_flag_period")
+      DBI::dbExecute(con, sql_tbl)
+      DBI::dbExecute(con, idx)
+    },
+    finally = DBI::dbDisconnect(con)
+  )
 }

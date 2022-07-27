@@ -7,6 +7,7 @@
 #' @export
 MapCatchesBySpp <- function(catchData)
 {
+  if(nrow(catchData) != 0){
   spPoints <- SpatialPoints(
     coords = select(catchData, Lon, Lat) # A data frame of coordinates
     , proj4string = skillsEnv$dd_crs # Projection
@@ -29,4 +30,9 @@ MapCatchesBySpp <- function(catchData)
     scales = list(draw = TRUE),
     pretty=TRUE
   )
+  } else {
+    ggplot(data.frame(x = 1, y = 1, text = "NO DATA"), aes(x = x, y = y)) +
+      geom_text(aes(label = text)) +
+      theme_void()
+  }
 }
